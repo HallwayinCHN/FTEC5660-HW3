@@ -100,18 +100,28 @@ Three independent API runs on November 17, 2026 evaluated all 20 public companie
 | Live run 2 | 60/60 | 100.0% | 5.18 s |
 | Live run 3 | 60/60 | 100.0% | 4.99 s |
 | Live run from a clean clone | 60/60 | 100.0% | 5.19 s |
+| Clean-clone rerun after the interview parser fix (`f271392`) | 60/60 | 100.0% | 5.68 s |
 
 Each of the three independent runs matched all **14 expected PASS** and **6 expected FAIL** decisions for each chosen point, giving 42 correct PASS and 18 correct FAIL judgments. There were no public disagreements to explain. Each of those runs produced 20 summaries and used one interview per company.
 
 The grader defines balanced accuracy as the mean of recall for true PASS and recall for true FAIL. An all-PASS baseline would get 42/60 decisions correct and score 50% balanced accuracy.
 
-I also ran a separate live check on four synthetic employee accounts covering a positive account, indirect criticism, praise alongside a material complaint, and insufficient evidence.
+### Interview robustness check
+
+I assigned expected decisions to 14 synthetic employee accounts before running the model. The cases covered double negation, hedges, sarcasm, unverified rumors, mixed praise and complaints, and insufficient evidence. I checked the returned decision and reviewed each PASS or FAIL excerpt in context.
+
+| Check | Before the fix | After the fix |
+| --- | ---: | ---: |
+| Expected classifier outcomes | 13/14 | 14/14 |
+| Verbatim excerpts that supported their PASS or FAIL decision | 10/10 | 10/10 |
+
+One employee mentioned a late staff lunch and said they had too little experience to comment on how supervisors handled employee concerns. DeepSeek returned `INSUFFICIENT` with a verbatim explanation. The parser expected an empty quote and retried the reply, eventually yielding no classifier outcome. The updated parser accepts the abstention, discards the quote, and proceeds to the former employee. The grading output still only uses PASS or FAIL decisions supported by a verbatim excerpt. These synthetic cases test the interview path separately from the official public score.
 
 ### Offline regression checks
 
 - **Public replay.** I fed the recorded interview classifications back through the official runner. The latest implementation reproduced all 20 CSV rows and all 60 verdicts.
 - **Missing credentials.** The CLI produced all 20 rows with 40/40 correct financial verdicts. It marked Point 7 missing and skipped the interviews.
-- **Unit tests.** Eight cases cover financial thresholds, rounding, missing or duplicate cost data, a zero revenue baseline, and the interview path under normal and failure conditions.
+- **Unit tests.** Nine cases cover financial thresholds, rounding, missing or duplicate cost data, a zero revenue baseline, and the interview path under normal and failure conditions. The abstention regression test checks that a nonempty or omitted quote does not cause a retry.
 
 Private-set performance remains unmeasured.
 
