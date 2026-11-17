@@ -131,7 +131,7 @@ Two years of sales establish historical performance over a defined period. Futur
 
 ### Task 2 reflection
 
-[Read the reflection on AI sycophancy and AI psychosis](reflection.md).
+[Download the Task 2 reflection as a PDF](reflection.pdf) or [read the Markdown version](reflection.md).
 
 ## Course starter reference
 
