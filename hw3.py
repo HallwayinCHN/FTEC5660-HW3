@@ -136,7 +136,7 @@ def financial_findings(sql_tool: Any) -> tuple[dict[int, str], list[str]]:
     return points, sentences
 
 
-async def classify_interview(agent: Any, transcript: str) -> tuple[str, str]:
+async def classify_interview(agent: Any, transcript: str) -> tuple[str | None, str]:
     messages = [
         ("system", WORKING_CONDITIONS_PROMPT),
         ("human", json.dumps({"interview": transcript}, ensure_ascii=False)),
@@ -162,7 +162,7 @@ async def classify_interview(agent: Any, transcript: str) -> tuple[str, str]:
                 raise
             if attempt == 0:
                 await asyncio.sleep(1)
-    raise ValueError("No valid interview classification after two attempts")
+    return None, ""
 
 
 async def employee_finding(agent: Any, interview_tool: Any) -> tuple[str | None, str]:
@@ -177,7 +177,7 @@ async def employee_finding(agent: Any, interview_tool: Any) -> tuple[str | None,
             speaker = role.replace("_", " ")
             ending = "" if quote.endswith((".", "!", "?")) else "."
             return verdict, f"Point 7 {verdict}: A {speaker} reported “{quote}”{ending}"
-    return None, "Point 7: Neither employee interview provided enough evidence for a verdict."
+    return None, "Point 7: Neither employee interview yielded a validated verdict."
 
 
 # Choose any 3 of the 15 points, e.g. CHOSEN_POINTS = [1, 7, 15]. Your agent

@@ -174,6 +174,8 @@ names and wording, and scores your 3 points only.
 
 ### My 3 points and rules
 
+I selected three questions from Part One, Chapter 3 of Philip Fisher's *Common Stocks and Uncommon Profits*. I use the course dataset to turn each question into a rule that can be applied consistently across companies.
+
 | Point | Why I chose it | PASS rule and evidence |
 | --- | --- | --- |
 | **1. Market potential for sales growth** | Sustained sales growth is evidence that customers are buying the company's products. An industry benchmark accounts for differences in market growth. | Total sales from `orders.amount` must grow by a larger percentage from FY2023 to FY2025 than the two-year median for the company's own industry. I use two complete fiscal years and treat past growth as a proxy for Fisher's forward-looking question. |
@@ -187,15 +189,15 @@ flowchart LR
     A["Company's LangChain tools"] --> B["Read-only SQL"]
     A --> C["Current employee interview"]
     B --> D["Compare growth and margin with industry medians"]
-    C --> E["DeepSeek classifies the interview"]
-    E -->|"Insufficient evidence"| F["Former employee interview"]
-    F --> E
-    E -->|"PASS or FAIL"| G["Verify the quote against the transcript"]
-    D --> H["Three verdicts and evidence summary"]
+    C --> E["DeepSeek classifies the interview and Python checks the quote"]
+    E -->|"Validated verdict"| H["Company verdicts and evidence summary"]
+    E -->|"No validated verdict"| F["Former employee interview"]
+    F --> G["Classify and check the second account"]
     G --> H
+    D --> H
 ```
 
-The agent routes each point to its evidence source. A single SQL query aggregates sales and operating costs separately, joins the company's industry benchmarks, and compares the metrics before rounding. DeepSeek assesses the employee account, and Python checks that the supporting quote appears verbatim in the interview. Python then writes a short summary with the two benchmark comparisons and the employee quote. Companies run with bounded concurrency. A failed evidence path leaves the other path's verified verdicts available to the runner.
+The agent routes each point to its evidence source. A single SQL query aggregates sales and operating costs separately, joins the company's industry benchmarks, and compares the metrics before rounding. DeepSeek assesses the current employee's account, and Python checks that the supporting quote appears verbatim in the interview. If the account is inconclusive or a valid response cannot be obtained after retries, the agent asks a former employee about the same topic. The agent summarizes the available evidence and preserves the financial verdicts if the interview path fails. Companies run with bounded concurrency.
 
 ### Results
 
@@ -208,6 +210,10 @@ I ran `python3 hw3.py --data-folder public_test` in three independent processes 
 | 3 | 60/60 | 100.0% | 4.99 s |
 
 No company disagreed with the public answer key in any run. Each point matched all 14 expected PASS and all 6 expected FAIL labels. Each run produced 20 summaries and used one interview per company, so the fallback interview was unnecessary on the public set. A separate check with four synthetic employee accounts covered a positive account, indirect criticism, praise alongside a material complaint, and insufficient evidence.
+
+A separate clean-clone test installed the dependencies in a new environment and reproduced **60/60** in **5.19 s**. After adding the interview fallback for invalid model replies, I replayed the recorded public-set classifications through the updated runner and tested the fallback with simulated malformed responses. The public results do not establish the score on the private grading set.
+
+Falcrest Technologies illustrates how the three judgments can differ within one company. Its two-year sales growth was **26.92%** against an industry median of **21.70%** (Point 1, PASS). Its FY2025 operating margin was **6.26%** against **9.40%** (Point 5, FAIL). A current employee reported low morale and a strike threat over pay (Point 7, FAIL).
 
 ### Task 2
 
