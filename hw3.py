@@ -7,6 +7,7 @@ import argparse
 import asyncio
 import csv
 import json
+import os
 import sqlite3
 import threading
 import zlib
@@ -69,7 +70,7 @@ costs AS (
     SELECT SUM(cost_of_sales + selling_admin + research_development) AS total_cost
     FROM monthly_costs
     WHERE month >= '2025-01' AND month < '2026-01'
-    HAVING COUNT(DISTINCT CASE
+    HAVING COUNT(*) = 12 AND COUNT(DISTINCT CASE
         WHEN cost_of_sales IS NOT NULL AND selling_admin IS NOT NULL
             AND research_development IS NOT NULL THEN month
     END) = 12
@@ -166,6 +167,9 @@ async def classify_interview(agent: Any, transcript: str) -> tuple[str | None, s
 
 
 async def employee_finding(agent: Any, interview_tool: Any) -> tuple[str | None, str]:
+    if agent is None:
+        return None, "Point 7: A DeepSeek API key was unavailable for interview evaluation."
+
     for role in ("current_employee", "former_employee"):
         transcript = interview_tool.invoke({"role": role, "topic": "working_conditions"})
         if not transcript.strip() or transcript.startswith(
@@ -197,6 +201,8 @@ def build_agent() -> Any:
     you will probably create one tool-calling agent per company there.
     """
     ### YOUR CODE HERE
+    if not os.getenv("DEEPSEEK_API_KEY", "").strip():
+        return None
     return ChatDeepSeek(
         model=MODEL_NAME,
         timeout=30,
