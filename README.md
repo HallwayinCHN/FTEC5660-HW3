@@ -170,14 +170,45 @@ for each public company. Grading uses a private set of about 20 unseen
 companies with the same tools and the same answer key rules, but different
 names and wording, and scores your 3 points only.
 
-## Homework 3 solution:
-> to students: this is your report, see the homework description.
+## Homework 3 solution
 
 ### My 3 points and rules
-> for each point: why you chose it, your PASS rule in one or two sentences, and the evidence it uses. Quote Fisher where it helps.
+
+| Point | Why I chose it | PASS rule and evidence |
+| --- | --- | --- |
+| **1. Market potential for sales growth** | Sustained sales growth is evidence that customers are buying the company's products. An industry benchmark accounts for differences in market growth. | Total sales from `orders.amount` must grow by a larger percentage from FY2023 to FY2025 than the two-year median for the company's own industry. I use two complete fiscal years and treat past growth as a proxy for Fisher's forward-looking question. |
+| **5. Worthwhile profit margin** | Sales growth has more value when the company keeps a meaningful share of its revenue after operating costs. | FY2025 operating margin must exceed the company's industry median. I subtract cost of sales, selling and administration, and R&D from FY2025 order revenue, then divide by that revenue and express the result as a percentage. |
+| **7. Labor and personnel relations** | Employees can describe day-to-day working relationships that do not appear in financial statements. | A knowledgeable employee must give specific evidence of healthy labor relations without reporting a material problem. The agent asks a current employee about `working_conditions` and asks a former employee if the first account lacks usable evidence. |
 
 ### Design
-> a visualization of your agent design and one paragraph describing it.
+
+```mermaid
+flowchart LR
+    A["Company's LangChain tools"] --> B["Read-only SQL"]
+    A --> C["Current employee interview"]
+    B --> D["Compare growth and margin with industry medians"]
+    C --> E["DeepSeek classifies the interview"]
+    E -->|"Insufficient evidence"| F["Former employee interview"]
+    F --> E
+    E -->|"PASS or FAIL"| G["Verify the quote against the transcript"]
+    D --> H["Three verdicts and evidence summary"]
+    G --> H
+```
+
+The agent routes each point to its evidence source. A single SQL query aggregates sales and operating costs separately, joins the company's industry benchmarks, and compares the metrics before rounding. DeepSeek assesses the employee account, and Python checks that the supporting quote appears verbatim in the interview. Python then writes a short summary with the two benchmark comparisons and the employee quote. Companies run with bounded concurrency. A failed evidence path leaves the other path's verified verdicts available to the runner.
 
 ### Results
-> your point score on `public_test`, the companies where your verdicts disagree with the public answers, and why.
+
+I ran `python3 hw3.py --data-folder public_test` in three independent processes on November 17, 2026. Each run evaluated the same 20 public companies and generated a new `results.csv`.
+
+| Run | Correct points | Balanced accuracy | Wall time |
+| --- | ---: | ---: | ---: |
+| 1 | 60/60 | 100.0% | 5.51 s |
+| 2 | 60/60 | 100.0% | 5.18 s |
+| 3 | 60/60 | 100.0% | 4.99 s |
+
+No company disagreed with the public answer key in any run. Each point matched all 14 expected PASS and all 6 expected FAIL labels. Each run produced 20 summaries and used one interview per company, so the fallback interview was unnecessary on the public set. A separate check with four synthetic employee accounts covered a positive account, indirect criticism, praise alongside a material complaint, and insufficient evidence.
+
+### Task 2
+
+[Reflection on AI sycophancy and AI psychosis](reflection.md).
