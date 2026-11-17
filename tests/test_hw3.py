@@ -134,3 +134,15 @@ class InterviewEvidenceTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(verdict)
         self.assertEqual(interview.invoke.call_count, 2)
         self.assertIn("Neither employee interview yielded a validated verdict", evidence)
+
+    async def test_abstention_does_not_rely_on_the_quote_field(self):
+        transcript = "I have only worked two shifts and cannot comment on employee relations."
+        for payload in (
+            {"verdict": "INSUFFICIENT", "quote": transcript},
+            {"verdict": "INSUFFICIENT"},
+        ):
+            with self.subTest(payload=payload):
+                reply = SimpleNamespace(content=json.dumps(payload))
+                model = SimpleNamespace(ainvoke=AsyncMock(return_value=reply))
+                self.assertEqual(await hw3.classify_interview(model, transcript), ("INSUFFICIENT", ""))
+                model.ainvoke.assert_awaited_once()

@@ -146,9 +146,10 @@ async def classify_interview(agent: Any, transcript: str) -> tuple[str | None, s
         try:
             response = await asyncio.wait_for(agent.ainvoke(messages), timeout=30)
             answer = json.loads(response.content)
-            verdict, quote = answer["verdict"], answer["quote"]
-            if verdict == "INSUFFICIENT" and quote == "":
-                return verdict, quote
+            verdict = answer["verdict"]
+            if verdict == "INSUFFICIENT":
+                return verdict, ""
+            quote = answer["quote"]
             if (
                 verdict in VERDICTS
                 and isinstance(quote, str)
